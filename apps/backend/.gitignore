@@ -1,0 +1,139 @@
+
+# ==================================================
+# NOVA - BACKEND GITIGNORE
+# Python / FastAPI
+# ==================================================
+
+
+# --------------------------------------------------
+# Python Bytecode & Cache
+# --------------------------------------------------
+
+__pycache__/
+*.py[cod]
+*$py.class
+.py[cod]
+
+
+# --------------------------------------------------
+# Virtual Environments
+# --------------------------------------------------
+
+.venv/
+venv/
+env/
+ENV/
+env.bak/
+venv.bak/
+
+
+# --------------------------------------------------
+# Python Packaging & Distribution
+# --------------------------------------------------
+
+build/
+dist/
+wheels/
+.eggs/
+*.egg-info/
+.installed.cfg
+*.egg
+
+
+# --------------------------------------------------
+# Testing & Coverage
+# --------------------------------------------------
+
+.pytest_cache/
+.tox/
+.nox/
+.coverage
+.coverage.*
+htmlcov/
+coverage.xml
+nosetests.xml
+junit.xml
+
+
+# --------------------------------------------------
+# Linters, Type Checkers & Formatters
+# --------------------------------------------------
+
+.ruff_cache/
+.mypy_cache/
+.pytype/
+.pyre/
+.dmypy.json
+dmypy.json
+
+
+# --------------------------------------------------
+# Python Debugging
+# --------------------------------------------------
+
+.prof/
+*.prof
+*.py,cover
+.pydevproject
+
+
+# --------------------------------------------------
+# Jupyter Notebook
+# --------------------------------------------------
+
+.ipynb_checkpoints/
+*/.ipynb_checkpoints/
+
+
+# --------------------------------------------------
+# Python Frameworks & Application Data
+# --------------------------------------------------
+
+# Django
+*.log
+local_settings.py
+db.sqlite3
+
+# Flask
+instance/
+
+# FastAPI / Uvicorn
+uvicorn.log
+
+
+# --------------------------------------------------
+# Local Database Data
+# --------------------------------------------------
+
+data/
+database/
+*.sqlite
+*.sqlite3
+*.db
+
+
+# --------------------------------------------------
+# Task Queues & Background Workers
+# --------------------------------------------------
+
+celerybeat-schedule
+celerybeat.pid
+
+
+# --------------------------------------------------
+# Environment & Runtime
+# --------------------------------------------------
+
+.python-version.local
+*.pid
+*.seed
+
+
+# --------------------------------------------------
+# Temporary Files
+# --------------------------------------------------
+
+*.tmp
+*.temp
+temp/
+tmp/

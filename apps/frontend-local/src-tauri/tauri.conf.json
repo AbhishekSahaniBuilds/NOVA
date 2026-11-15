@@ -1,0 +1,45 @@
+{
+  "$schema": "https://schema.tauri.app/config/2",
+  "productName": "NOVA Desktop",
+  "version": "0.1.0",
+  "identifier": "com.abhishek.nova-desktop",
+
+  "build": {
+    "beforeDevCommand": "npm run dev",
+    "devUrl": "http://localhost:1420",
+    "beforeBuildCommand": "npm run build",
+    "frontendDist": "../dist"
+  },
+
+  "app": {
+    "windows": [
+      {
+        "title": "NOVA Desktop",
+        "width": 1200,
+        "height": 800,
+        "minWidth": 800,
+        "minHeight": 600,
+        "resizable": true,
+        "maximizable": true,
+        "fullscreen": false,
+        "center": true
+      }
+    ],
+
+    "security": {
+      "csp": null
+    }
+  },
+
+  "bundle": {
+    "active": true,
+    "targets": "all",
+    "icon": [
+      "../../../packages/brand-assets/icons/app/generated/16x16.png",
+      "../../../packages/brand-assets/icons/app/generated/32x32.png",
+      "../../../packages/brand-assets/icons/app/generated/128x128.png",
+      "../../../packages/brand-assets/icons/app/generated/128x128@2x.png",
+      "../../../packages/brand-assets/icons/app/generated/icon.ico"
+    ]
+  }
+}
