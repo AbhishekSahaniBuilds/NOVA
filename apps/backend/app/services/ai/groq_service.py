@@ -70,7 +70,7 @@ async def groq_generate_response(
 
     try:
         response = await client.chat.completions.create(
-            model=model or settings.groq_model,
+            model=model,
             messages=messages,
             temperature=temperature,
             max_tokens=max_tokens,
