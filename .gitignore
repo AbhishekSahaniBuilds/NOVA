@@ -61,5 +61,5 @@ logs/
 # ------------------------------------------
 *.stackdump
 *.core
-core
-core.*
+/core
+/core.*

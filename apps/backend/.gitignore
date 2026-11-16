@@ -106,7 +106,6 @@ uvicorn.log
 # --------------------------------------------------
 
 data/
-database/
 *.sqlite
 *.sqlite3
 *.db

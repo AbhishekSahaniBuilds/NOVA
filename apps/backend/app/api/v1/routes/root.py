@@ -17,5 +17,5 @@ async def root():
         "version": "0.1.0",
         "status": "running",
         "docs": "/docs",
-        "health": "/health",
+        "health": "/v1/health",
     }

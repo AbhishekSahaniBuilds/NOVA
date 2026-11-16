@@ -11,7 +11,7 @@ app = FastAPI(
     debug=settings.debug,
 )
 
-app.include_router(api_router)
+app.include_router(api_router, prefix="/api")
 
 
 if __name__ == "__main__":
