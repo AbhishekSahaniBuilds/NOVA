@@ -8,19 +8,24 @@ BASE_DIR = Path(__file__).resolve().parents[2]
 
 class Settings(BaseSettings):
     # Application
-    app_env: str = "development"
-    debug: bool = True
+    app_env: str
+    debug: bool
 
     # Server
-    host: str = "127.0.0.1"
-    port: int = 8000
+    host: str
+    port: int
 
     # MongoDB
     mongodb_uri: str
-    mongodb_database: str = "nova"
+    mongodb_database: str
 
     # Groq AI
     groq_api_key: str
+    groq_model_primary: str = "openai/gpt-oss-120b"
+    groq_model_fallback: str = "your_fallback_model_id"
+
+    # Google AI Studio
+    gemini_api_key: str
 
     model_config = SettingsConfigDict(
         env_file=BASE_DIR / ".env",
