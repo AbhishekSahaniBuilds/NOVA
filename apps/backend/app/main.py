@@ -4,7 +4,7 @@ from contextlib import asynccontextmanager
 import uvicorn
 from fastapi import FastAPI
 
-from app.api.router import api_router
+from app.api import router
 from app.core.config import settings
 from app.services.ai.google_service import (
     connect_to_gemini,
@@ -15,82 +15,77 @@ from app.services.ai.groq_service import (
     disconnect_to_groq,
 )
 
-logger = logging.getLogger("uvicorn.error")
-
-
-# ======================================================
-# Lifespan
-# ======================================================
+logger = logging.getLogger(__name__)
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    # Startup
-    try:
-        groq_status = await connect_to_groq()
+    app.state.groq_client = None
+    app.state.gemini_client = None
 
-        if groq_status["success"]:
+    # Start Groq.
+    try:
+        groq_result = await connect_to_groq()
+
+        if groq_result.get("success"):
+            app.state.groq_client = groq_result.get("client")
             logger.info("Groq connected successfully.")
         else:
-            logger.error("Groq connection failed: %s", groq_status.get("error"))
+            logger.error(
+                "Groq connection failed: %s",
+                groq_result.get("error"),
+            )
 
     except Exception:
-        logger.exception("Groq startup failed")
+        logger.exception("Unexpected error while connecting to Groq.")
 
+    # Start Gemini.
     try:
-        gemini_status = await connect_to_gemini()
+        gemini_result = await connect_to_gemini()
 
-        if gemini_status["success"]:
+        if gemini_result.get("success"):
+            app.state.gemini_client = gemini_result.get("client")
             logger.info("Gemini connected successfully.")
         else:
-            logger.error("Gemini connection failed: %s", gemini_status.get("error"))
+            logger.error(
+                "Gemini connection failed: %s",
+                gemini_result.get("error"),
+            )
 
     except Exception:
-        logger.exception("Gemini startup failed")
+        logger.exception("Unexpected error while connecting to Gemini.")
 
-    try:
-        yield
+    yield
 
-    finally:
-        # Shutdown
+    # Shut down Gemini.
+    if app.state.gemini_client is not None:
         try:
-            groq_result = await disconnect_to_groq()
-
-            if groq_result["success"]:
-                logger.info("Groq disconnected successfully.")
-            else:
-                logger.error("Groq disconnection failed: %s", groq_result.get("error"))
-
+            await disconnect_to_gemini(app.state.gemini_client)
+            logger.info("Gemini disconnected.")
         except Exception:
-            logger.exception("Groq shutdown failed")
+            logger.exception("Error while disconnecting Gemini.")
 
+    # Shut down Groq.
+    if app.state.groq_client is not None:
         try:
-            gemini_result = await disconnect_to_gemini()
-
-            if gemini_result["success"]:
-                logger.info("Gemini disconnected successfully.")
-            else:
-                logger.error(
-                    "Gemini disconnection failed: %s", gemini_result.get("error")
-                )
-
+            await disconnect_to_groq(app.state.groq_client)
+            logger.info("Groq disconnected.")
         except Exception:
-            logger.exception("Gemini shutdown failed")
+            logger.exception("Error while disconnecting Groq.")
 
-
-# ======================================================
-# Main
-# ======================================================
 
 app = FastAPI(
     title="NOVA API",
-    description="Backend API for Neural Omni Vector Assistant",
-    version="0.1.0",
+    description="Neural Omni Vector Assistant",
+    version="1.0.0",
     debug=settings.debug,
     lifespan=lifespan,
 )
 
-app.include_router(api_router, prefix="/api")
+app.include_router(
+    router.api_router,
+    prefix="/api",
+)
 
 
 if __name__ == "__main__":
