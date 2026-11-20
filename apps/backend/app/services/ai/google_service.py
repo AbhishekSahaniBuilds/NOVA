@@ -8,6 +8,11 @@ from app.core.config import settings
 logger = logging.getLogger(__name__)
 
 
+# ============================================================
+# CONNECT TO GEMINI
+# ============================================================
+
+
 async def connect_to_gemini() -> dict[str, Any]:
     try:
         if not settings.gemini_api_key:
@@ -34,13 +39,24 @@ async def connect_to_gemini() -> dict[str, Any]:
         }
 
 
+# ============================================================
+# DISCONNECT FROM GEMINI
+# ============================================================
+
+
 async def disconnect_to_gemini(
     client: Any,
 ) -> None:
+
     if client is None:
         return
 
     await client.aclose()
+
+
+# ============================================================
+# GENERATE GEMINI RESPONSE
+# ============================================================
 
 
 async def gemini_generate_response(
@@ -66,6 +82,13 @@ async def gemini_generate_response(
             "error": "No Gemini model was configured.",
         }
 
+    if not isinstance(messages, list) or not messages:
+        return {
+            "provider": "gemini",
+            "success": False,
+            "error": "Valid messages must be provided.",
+        }
+
     try:
         gemini_messages: list[dict[str, Any]] = []
 
@@ -81,13 +104,16 @@ async def gemini_generate_response(
 
             if role == "assistant":
                 gemini_role = "model"
+
             elif role in ("user", "tool"):
                 gemini_role = "user"
+
             else:
                 continue
 
             if gemini_messages and gemini_messages[-1]["role"] == gemini_role:
                 gemini_messages[-1]["parts"][0]["text"] += "\n\n" + content
+
             else:
                 gemini_messages.append(
                     {
@@ -105,6 +131,10 @@ async def gemini_generate_response(
 
         if gemini_messages[-1]["role"] != "user":
             raise ValueError("Gemini conversation must end with a user message.")
+
+        # ----------------------------------------------------
+        # GENERATE RESPONSE
+        # ----------------------------------------------------
 
         response = await client.models.generate_content(
             model=model,
@@ -144,6 +174,11 @@ async def gemini_generate_response(
         }
 
 
+# ============================================================
+# GET GEMINI MODEL LIST
+# ============================================================
+
+
 async def gemini_get_model_list(
     client: Any,
 ) -> dict[str, Any]:
@@ -159,17 +194,14 @@ async def gemini_get_model_list(
         models = []
 
         async for model in await client.models.list():
-            supported_actions = (
-                getattr(
-                    model,
-                    "supported_actions",
-                    [],
-                )
-                or []
-            )
+            supported_actions = getattr(model, "supported_actions", []) or []
 
             if "generateContent" in supported_actions:
-                model_name = getattr(model, "name", None)
+                model_name = getattr(
+                    model,
+                    "name",
+                    None,
+                )
 
                 if model_name:
                     models.append(model_name.removeprefix("models/"))

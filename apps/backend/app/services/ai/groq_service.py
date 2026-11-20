@@ -1,3 +1,4 @@
+import json
 import logging
 from typing import Any
 
@@ -6,6 +7,11 @@ from groq import AsyncGroq
 from app.core.config import settings
 
 logger = logging.getLogger(__name__)
+
+
+# ============================================================
+# CONNECT TO GROQ
+# ============================================================
 
 
 async def connect_to_groq() -> dict[str, Any]:
@@ -34,19 +40,31 @@ async def connect_to_groq() -> dict[str, Any]:
         }
 
 
+# ============================================================
+# DISCONNECT FROM GROQ
+# ============================================================
+
+
 async def disconnect_to_groq(
     client: AsyncGroq | None,
 ) -> None:
+
     if client is None:
         return
 
     await client.close()
 
 
+# ============================================================
+# GENERATE GROQ RESPONSE
+# ============================================================
+
+
 async def groq_generate_response(
     client: AsyncGroq | None,
     messages: list[dict[str, Any]],
     system_prompt: str,
+    tools: list[dict[str, Any]] | None = None,
     model: str | None = None,
     temperature: float = 0.7,
     max_tokens: int = 2048,
@@ -74,40 +92,104 @@ async def groq_generate_response(
         }
 
     try:
-        response = await client.chat.completions.create(
-            model=model,
-            messages=[
-                {
-                    "role": "system",
-                    "content": (
-                        system_prompt + "\n\n"
-                        "Return your response as a valid JSON object "
-                        "matching the requested response structure. "
-                        "Do not include Markdown code fences."
-                    ),
-                },
-                *messages,
-            ],
-            temperature=temperature,
-            max_tokens=max_tokens,
-            response_format={
-                "type": "json_object",
+        # ----------------------------------------------------
+        # PREPARE MESSAGES
+        # ----------------------------------------------------
+
+        request_messages = [
+            {
+                "role": "system",
+                "content": system_prompt,
             },
+            *messages,
+        ]
+
+        # ----------------------------------------------------
+        # BUILD REQUEST
+        # ----------------------------------------------------
+
+        request_data: dict[str, Any] = {
+            "model": model,
+            "messages": request_messages,
+            "temperature": temperature,
+            "max_tokens": max_tokens,
+        }
+
+        # ----------------------------------------------------
+        # CONFIGURE RESPONSE MODE
+        # ----------------------------------------------------
+
+        if tools:
+            request_data["tools"] = tools
+            request_data["tool_choice"] = "auto"
+
+        else:
+            request_data["response_format"] = {
+                "type": "json_object",
+            }
+
+        # ----------------------------------------------------
+        # SEND REQUEST
+        # ----------------------------------------------------
+
+        response = await client.chat.completions.create(
+            **request_data,
         )
 
         if not response.choices:
             raise RuntimeError("Groq returned an empty choices list.")
 
-        content = response.choices[0].message.content
+        message = response.choices[0].message
 
-        if not content:
-            raise RuntimeError("Groq returned an empty response.")
+        # ----------------------------------------------------
+        # EXTRACT TOOL CALLS
+        # ----------------------------------------------------
+
+        tool_calls: list[dict[str, Any]] = []
+
+        if message.tool_calls:
+            for tool_call in message.tool_calls:
+                function_name = tool_call.function.name
+
+                raw_arguments = tool_call.function.arguments or "{}"
+
+                try:
+                    arguments = json.loads(raw_arguments)
+
+                except json.JSONDecodeError as error:
+                    raise ValueError(
+                        f"Invalid arguments for tool {function_name}."
+                    ) from error
+
+                if not isinstance(arguments, dict):
+                    raise ValueError("Tool arguments must be a JSON object.")
+
+                tool_calls.append(
+                    {
+                        "name": function_name,
+                        "arguments": arguments,
+                    }
+                )
+
+        # ----------------------------------------------------
+        # EXTRACT RESPONSE CONTENT
+        # ----------------------------------------------------
+
+        content = message.content or ""
+
+        if not content and not tool_calls:
+            raise RuntimeError("Groq returned neither content nor tool calls.")
+
+        # ----------------------------------------------------
+        # RETURN RESPONSE
+        # ----------------------------------------------------
 
         return {
             "provider": "groq",
             "model": model,
             "success": True,
             "content": content,
+            "tool_calls": tool_calls,
         }
 
     except Exception as error:
@@ -119,6 +201,11 @@ async def groq_generate_response(
             "success": False,
             "error": str(error),
         }
+
+
+# ============================================================
+# GET GROQ MODEL LIST
+# ============================================================
 
 
 async def groq_get_model_list(
