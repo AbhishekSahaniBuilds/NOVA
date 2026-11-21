@@ -1,12 +1,13 @@
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 
-import favicon32 from "../../../packages/brand-assets/icons/web/generated/32x32.png";
 import favicon16 from "../../../packages/brand-assets/icons/web/generated/16x16.png";
+import favicon32 from "../../../packages/brand-assets/icons/web/generated/32x32.png";
 import appleTouchIcon from "../../../packages/brand-assets/icons/web/generated/apple-touch-icon.png";
 
-import "./styles/index.css";
+import "../../../packages/brand-assets/styles/fonts.css";
 import App from "./app/App.jsx";
+import "./styles/index.css";
 
 const icons = [
   {
