@@ -11,4 +11,5 @@ async def health_check():
         "status": "ok",
         "application": "NOVA",
         "environment": settings.app_env,
+        "version": "v1",
     }

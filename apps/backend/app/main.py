@@ -3,6 +3,7 @@ from contextlib import asynccontextmanager
 
 import uvicorn
 from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 
 from app.api import router
 from app.core.config import settings
@@ -16,6 +17,11 @@ from app.services.ai.groq_service import (
 )
 
 logger = logging.getLogger(__name__)
+
+
+# ============================================================
+# APPLICATION LIFESPAN
+# ============================================================
 
 
 @asynccontextmanager
@@ -74,6 +80,10 @@ async def lifespan(app: FastAPI):
             logger.exception("Error while disconnecting Groq.")
 
 
+# ============================================================
+# FASTAPI APPLICATION
+# ============================================================
+
 app = FastAPI(
     title="NOVA API",
     description="Neural Omni Vector Assistant",
@@ -82,11 +92,36 @@ app = FastAPI(
     lifespan=lifespan,
 )
 
+
+# ============================================================
+# CORS MIDDLEWARE
+# ============================================================
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=[
+        "http://localhost:5173",
+        "http://127.0.0.1:5173",
+    ],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+
+# ============================================================
+# API ROUTER
+# ============================================================
+
 app.include_router(
     router.api_router,
     prefix="/api",
 )
 
+
+# ============================================================
+# SERVER STARTUP
+# ============================================================
 
 if __name__ == "__main__":
     uvicorn.run(

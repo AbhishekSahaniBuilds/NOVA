@@ -7,6 +7,7 @@ import appleTouchIcon from "../../../packages/brand-assets/icons/web/generated/a
 
 import "../../../packages/brand-assets/styles/fonts.css";
 import App from "./app/App.jsx";
+import { initializeAPI } from "./services/api/index.js";
 import "./styles/index.css";
 
 const icons = [
@@ -41,8 +42,26 @@ icons.forEach(({ rel, type, sizes, href }) => {
   document.head.appendChild(link);
 });
 
-createRoot(document.getElementById("root")).render(
-  <StrictMode>
-    <App />
-  </StrictMode>,
-);
+const root = createRoot(document.getElementById("root"));
+
+async function startApplication() {
+  try {
+    await initializeAPI();
+
+    root.render(
+      <StrictMode>
+        <App />
+      </StrictMode>,
+    );
+  } catch (error) {
+    root.render(
+      <main>
+        <h1>Unable to start NOVA</h1>
+        <p>Error: {error.message}</p>
+        <button onClick={() => window.location.reload()}>Retry</button>
+      </main>,
+    );
+  }
+}
+
+startApplication();

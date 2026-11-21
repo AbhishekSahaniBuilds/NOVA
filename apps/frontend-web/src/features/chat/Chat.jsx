@@ -1,4 +1,5 @@
 import { useState } from "react";
+
 import styles from "./Chat.module.css";
 
 const possibleWelcomeTexts = [
@@ -43,7 +44,6 @@ function Chat() {
           value={message}
           onChange={(event) => setMessage(event.target.value)}
           placeholder="Message NOVA..."
-          aria-label="Message NOVA"
         />
       </div>
     </section>
