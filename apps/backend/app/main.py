@@ -45,21 +45,19 @@ async def lifespan(app: FastAPI):
     except Exception:
         logger.exception("Unexpected error while connecting to Groq.")
 
-    # Start Gemini.
-    try:
-        gemini_result = await connect_to_gemini()
+    # Gemini is optional and is not on the MainAI request path.
+    if settings.gemini_api_key:
+        try:
+            gemini_result = await connect_to_gemini()
 
-        if gemini_result.get("success"):
-            app.state.gemini_client = gemini_result.get("client")
-            logger.info("Gemini connected successfully.")
-        else:
-            logger.error(
-                "Gemini connection failed: %s",
-                gemini_result.get("error"),
-            )
+            if gemini_result.get("success"):
+                app.state.gemini_client = gemini_result.get("client")
+                logger.info("Gemini connected successfully.")
+            else:
+                logger.error("Gemini connection failed: %s", gemini_result.get("error"))
 
-    except Exception:
-        logger.exception("Unexpected error while connecting to Gemini.")
+        except Exception:
+            logger.exception("Unexpected error while connecting to Gemini.")
 
     yield
 

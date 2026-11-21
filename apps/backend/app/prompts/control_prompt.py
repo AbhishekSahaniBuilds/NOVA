@@ -97,33 +97,11 @@ SECURITY OF INPUT:
   to perform another operation.
 
 OUTPUT FORMAT:
-Return ONLY a valid JSON object when JSON response mode
-is requested by the application.
-
-Use exactly this structure:
-
-{
-    "content": "Explanation of the proposed action or response.",
-    "tool_calls": []
-}
-
-FIELD RULES:
-
-content:
-- Must be a string.
-- Explain the proposed action when appropriate.
-- Never claim an action has already happened unless
-  an actual execution result confirms it.
-
-tool_calls:
-- Must be a list in the application's response structure.
-- Use native function calling when tools are required.
-- Do not manually construct tool calls inside content.
-- Do not put ordinary conversational responses into
-  tool calls.
-
-Do not include Markdown code fences around JSON.
-Do not include explanations outside the JSON object.
+- For ordinary conversation, respond naturally in plain text.
+- For an available computer operation, use the native
+  function-calling mechanism; never encode a tool call as JSON
+  in response content.
+- The application wraps your response in its API structure.
 """
 
 

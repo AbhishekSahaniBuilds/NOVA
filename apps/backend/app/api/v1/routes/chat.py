@@ -24,17 +24,11 @@ async def chat(
         )
 
         if not response.get("success"):
-            logger.error(
-                "Chat processing failed: %s",
-                response.get("error"),
-            )
+            logger.error("Chat processing failed.")
 
             raise HTTPException(
                 status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-                detail=response.get(
-                    "error",
-                    "Unable to process your message.",
-                ),
+                detail="Unable to process your message. Check the server logs for details.",
             )
 
         return response

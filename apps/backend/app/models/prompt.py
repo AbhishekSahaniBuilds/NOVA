@@ -1,6 +1,6 @@
 from typing import Literal
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 
 class ChatMessage(BaseModel):
@@ -11,6 +11,13 @@ class ChatMessage(BaseModel):
         min_length=1,
         max_length=12000,
     )
+
+    @field_validator("content")
+    @classmethod
+    def content_must_not_be_blank(cls, value: str) -> str:
+        if not value.strip():
+            raise ValueError("Message content cannot be blank.")
+        return value
 
 
 class UserPrompt(BaseModel):
@@ -27,3 +34,10 @@ class UserPrompt(BaseModel):
     )
 
     control_mode: bool = False
+
+    @field_validator("content")
+    @classmethod
+    def content_must_not_be_blank(cls, value: str) -> str:
+        if not value.strip():
+            raise ValueError("Message content cannot be blank.")
+        return value

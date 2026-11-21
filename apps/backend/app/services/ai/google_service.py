@@ -14,10 +14,16 @@ logger = logging.getLogger(__name__)
 
 
 async def connect_to_gemini() -> dict[str, Any]:
-    try:
-        if not settings.gemini_api_key:
-            raise ValueError("GEMINI_API_KEY is not configured.")
+    if not settings.gemini_api_key:
+        logger.error("GEMINI_API_KEY is not configured.")
+        return {
+            "provider": "gemini",
+            "success": False,
+            "client": None,
+            "error": "GEMINI_API_KEY is not configured.",
+        }
 
+    try:
         client = genai.Client(
             api_key=settings.gemini_api_key,
         ).aio
@@ -28,14 +34,14 @@ async def connect_to_gemini() -> dict[str, Any]:
             "client": client,
         }
 
-    except Exception as error:
+    except Exception:
         logger.exception("Failed to initialize Gemini.")
 
         return {
             "provider": "gemini",
             "success": False,
             "client": None,
-            "error": str(error),
+            "error": "Gemini could not be initialized.",
         }
 
 
@@ -163,14 +169,14 @@ async def gemini_generate_response(
             "content": content,
         }
 
-    except Exception as error:
+    except Exception:
         logger.exception("Gemini generation failed.")
 
         return {
             "provider": "gemini",
             "model": model,
             "success": False,
-            "error": str(error),
+            "error": "Gemini request failed.",
         }
 
 
@@ -212,11 +218,11 @@ async def gemini_get_model_list(
             "models": models,
         }
 
-    except Exception as error:
+    except Exception:
         logger.exception("Failed to retrieve Gemini models.")
 
         return {
             "provider": "gemini",
             "success": False,
-            "error": str(error),
+            "error": "Unable to retrieve Gemini models.",
         }

@@ -15,10 +15,16 @@ logger = logging.getLogger(__name__)
 
 
 async def connect_to_groq() -> dict[str, Any]:
-    try:
-        if not settings.groq_api_key:
-            raise ValueError("GROQ_API_KEY is not configured.")
+    if not settings.groq_api_key:
+        logger.error("GROQ_API_KEY is not configured.")
+        return {
+            "provider": "groq",
+            "success": False,
+            "client": None,
+            "error": "GROQ_API_KEY is not configured.",
+        }
 
+    try:
         client = AsyncGroq(
             api_key=settings.groq_api_key,
         )
@@ -29,14 +35,14 @@ async def connect_to_groq() -> dict[str, Any]:
             "client": client,
         }
 
-    except Exception as error:
+    except Exception:
         logger.exception("Failed to initialize Groq.")
 
         return {
             "provider": "groq",
             "success": False,
             "client": None,
-            "error": str(error),
+            "error": "Groq could not be initialized.",
         }
 
 
@@ -192,14 +198,14 @@ async def groq_generate_response(
             "tool_calls": tool_calls,
         }
 
-    except Exception as error:
+    except Exception:
         logger.exception("Groq generation failed.")
 
         return {
             "provider": "groq",
             "model": model,
             "success": False,
-            "error": str(error),
+            "error": "Groq request failed.",
         }
 
 
@@ -230,11 +236,11 @@ async def groq_get_model_list(
             "models": models,
         }
 
-    except Exception as error:
+    except Exception:
         logger.exception("Failed to retrieve Groq models.")
 
         return {
             "provider": "groq",
             "success": False,
-            "error": str(error),
+            "error": "Unable to retrieve Groq models.",
         }

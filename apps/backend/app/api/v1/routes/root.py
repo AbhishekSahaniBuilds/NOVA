@@ -14,7 +14,7 @@ async def root():
         "name": "NOVA",
         "full_name": "Neural Omni Vector Assistant",
         "description": "Backend API for NOVA",
-        "version": "0.1.0",
+        "version": "1.0.0",
         "status": "running",
         "docs": "/docs",
         "health": "/v1/health",

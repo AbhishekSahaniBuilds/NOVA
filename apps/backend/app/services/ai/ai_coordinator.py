@@ -8,7 +8,7 @@ from app.core.config import settings
 from app.models import MainAIResponse
 from app.prompts import chat_prompt, control_prompt
 from app.services.ai import groq_service
-from app.tools.tool_registry import get_available_tools
+from app.tools.tool_registry import get_available_tools, validate_tool_calls
 
 logger = logging.getLogger(__name__)
 
@@ -49,22 +49,70 @@ async def generate_master_response(
 
     native_tool_calls = result.get("tool_calls") or []
     if native_tool_calls:
+        if not control_mode:
+            logger.warning("Rejected an unexpected native tool call in chat mode.")
+            return {
+                "provider": result.get("provider", "groq"),
+                "success": False,
+                "error": "Groq returned an unexpected tool call.",
+            }
+
+        validated_calls, validation_error = validate_tool_calls(native_tool_calls)
+        if validated_calls is None:
+            logger.warning("Rejected invalid native tool call: %s", validation_error)
+            return {
+                "provider": result.get("provider", "groq"),
+                "success": False,
+                "error": "Groq returned an invalid tool call.",
+            }
+
         return {
             **result,
             "provider": result.get("provider", "groq"),
             "success": True,
             "content": result.get("content") or "",
-            "tool_calls": native_tool_calls,
+            "tool_calls": validated_calls,
         }
 
-    main_data, parse_error = validate_main_ai_response(result.get("content"))
+    main_data, _ = validate_main_ai_response(result.get("content"))
+    if main_data is None and control_mode:
+        content = result.get("content")
+        if isinstance(content, str) and content.strip():
+            return {
+                **result,
+                "provider": result.get("provider", "groq"),
+                "success": True,
+                "content": content,
+                "tool_calls": [],
+            }
+
     if main_data is None:
+        logger.warning("Groq returned invalid structured response.")
         return {
-            **result,
             "provider": result.get("provider", "groq"),
             "success": False,
             "error": "Groq returned an invalid structured response.",
-            "details": parse_error,
+        }
+
+    structured_tool_calls = [call.model_dump() for call in main_data.tool_calls]
+    if structured_tool_calls:
+        logger.warning("Rejected structured tool calls; native calls are required.")
+        return {
+            "provider": result.get("provider", "groq"),
+            "success": False,
+            "error": (
+                "Groq returned an unexpected tool call."
+                if not control_mode
+                else "Groq returned a non-native tool call."
+            ),
+        }
+
+    if not main_data.content.strip():
+        logger.warning("Groq returned an empty structured response.")
+        return {
+            "provider": result.get("provider", "groq"),
+            "success": False,
+            "error": "Groq returned an empty structured response.",
         }
 
     return {
@@ -72,7 +120,7 @@ async def generate_master_response(
         "provider": result.get("provider", "groq"),
         "success": True,
         "content": main_data.content,
-        "tool_calls": [call.model_dump() for call in main_data.tool_calls],
+        "tool_calls": [],
     }
 
 
@@ -190,7 +238,6 @@ async def generate_groq_response(
 
     if fallback_result.get("success"):
         fallback_result["used_fallback"] = True
-        fallback_result["primary_error"] = primary_result.get("error")
 
     return fallback_result
 

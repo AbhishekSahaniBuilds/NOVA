@@ -6,20 +6,20 @@ BASE_DIR = Path(__file__).resolve().parents[2]
 
 
 class Settings(BaseSettings):
-    app_env: str
-    debug: bool
-    host: str
-    port: int
+    app_env: str = "development"
+    debug: bool = False
+    host: str = "127.0.0.1"
+    port: int = 8000
 
-    mongodb_uri: str
-    mongodb_database: str
+    mongodb_uri: str | None = None
+    mongodb_database: str | None = None
 
-    groq_api_key: str
-    groq_model_primary: str
-    groq_model_fallback: str
+    groq_api_key: str | None = None
+    groq_model_primary: str = "openai/gpt-oss-120b"
+    groq_model_fallback: str | None = "openai/gpt-oss-20b"
 
-    gemini_api_key: str
-    gemini_model_primary: str
+    gemini_api_key: str | None = None
+    gemini_model_primary: str | None = None
 
     model_config = SettingsConfigDict(
         env_file=BASE_DIR / ".env",
