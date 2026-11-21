@@ -2,6 +2,8 @@ from typing import Literal
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
+from app.models.main_ai_response import ToolCall
+
 
 class ChatMessage(BaseModel):
     model_config = ConfigDict(extra="forbid")
@@ -20,6 +22,13 @@ class ChatMessage(BaseModel):
         return value
 
 
+class ToolApproval(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    decision: Literal["approved", "denied"]
+    tool_calls: list[ToolCall] = Field(min_length=1)
+
+
 class UserPrompt(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
@@ -34,6 +43,8 @@ class UserPrompt(BaseModel):
     )
 
     control_mode: bool = False
+
+    tool_approval: ToolApproval | None = None
 
     @field_validator("content")
     @classmethod

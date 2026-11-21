@@ -13,6 +13,41 @@ from app.tools.tool_registry import get_available_tools, validate_tool_calls
 logger = logging.getLogger(__name__)
 
 
+def _describe_tool_action(tool_call: dict[str, Any]) -> str:
+    name = tool_call["name"]
+    arguments = tool_call["arguments"]
+
+    if name == "open_application":
+        return f"open {arguments['application']}"
+    if name == "open_file":
+        return f"open the file {arguments['file_path']}"
+    if name == "open_folder":
+        return f"open the folder {arguments['folder_path']}"
+    return "perform the requested action"
+
+
+def _join_tool_actions(actions: list[str]) -> str:
+    if len(actions) < 3:
+        return " and ".join(actions)
+    return f"{', '.join(actions[:-1])}, and {actions[-1]}"
+
+
+def build_tool_approval_question(tool_calls: list[dict[str, Any]]) -> str:
+    actions = [_describe_tool_action(call) for call in tool_calls]
+    if len(actions) == 1:
+        return f"I can {actions[0]}. Would you like me to?"
+
+    return (
+        f"I can {_join_tool_actions(actions)}. "
+        "Would you like me to do that?"
+    )
+
+
+def build_approved_action_message(tool_calls: list[dict[str, Any]]) -> str:
+    actions = [_describe_tool_action(call) for call in tool_calls]
+    return f"Okay, I'll {_join_tool_actions(actions)}."
+
+
 async def generate_master_response(
     main_ai_client: Any,
     messages: list[dict[str, Any]],
@@ -70,8 +105,10 @@ async def generate_master_response(
             **result,
             "provider": result.get("provider", "groq"),
             "success": True,
-            "content": result.get("content") or "",
-            "tool_calls": validated_calls,
+            "content": build_tool_approval_question(validated_calls),
+            "tool_calls": [],
+            "pending_tool_calls": validated_calls,
+            "approval_required": True,
         }
 
     main_data, _ = validate_main_ai_response(result.get("content"))

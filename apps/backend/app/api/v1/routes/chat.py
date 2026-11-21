@@ -21,6 +21,7 @@ async def chat(
             content=prompt.content,
             message_history=prompt.message_history,
             control_mode=prompt.control_mode,
+            tool_approval=prompt.tool_approval,
         )
 
         if not response.get("success"):

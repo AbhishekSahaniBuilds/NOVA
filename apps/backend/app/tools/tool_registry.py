@@ -1,51 +1,13 @@
 from typing import Any
 
+from app.tools.definitions import applications as application_tools
+from app.tools.definitions import files as file_tools
+from app.tools.definitions import folders as folders_tools
+
 TOOL_REGISTRY: dict[str, dict[str, Any]] = {
-    "open_application": {
-        "name": "open_application",
-        "description": "Open an installed Windows application.",
-        "parameters": {
-            "type": "object",
-            "properties": {
-                "application": {
-                    "type": "string",
-                    "description": "Application identifier, such as notepad or calculator.",
-                }
-            },
-            "required": ["application"],
-            "additionalProperties": False,
-        },
-    },
-    "open_file": {
-        "name": "open_file",
-        "description": "Open a file on the user's Windows computer.",
-        "parameters": {
-            "type": "object",
-            "properties": {
-                "file_path": {
-                    "type": "string",
-                    "description": "Absolute path of the file to open.",
-                }
-            },
-            "required": ["file_path"],
-            "additionalProperties": False,
-        },
-    },
-    "open_folder": {
-        "name": "open_folder",
-        "description": "Open a folder in Windows File Explorer.",
-        "parameters": {
-            "type": "object",
-            "properties": {
-                "folder_path": {
-                    "type": "string",
-                    "description": "Absolute path of the folder.",
-                }
-            },
-            "required": ["folder_path"],
-            "additionalProperties": False,
-        },
-    },
+    "open_application": application_tools.open_application,
+    "open_file": file_tools.open_file,
+    "open_folder": folders_tools.open_folder,
 }
 
 
@@ -106,10 +68,12 @@ def validate_tool_calls(
                 "string": lambda item: isinstance(item, str),
                 "object": lambda item: isinstance(item, dict),
                 "array": lambda item: isinstance(item, list),
-                "integer": lambda item: isinstance(item, int)
-                and not isinstance(item, bool),
-                "number": lambda item: isinstance(item, (int, float))
-                and not isinstance(item, bool),
+                "integer": lambda item: (
+                    isinstance(item, int) and not isinstance(item, bool)
+                ),
+                "number": lambda item: (
+                    isinstance(item, (int, float)) and not isinstance(item, bool)
+                ),
                 "boolean": lambda item: isinstance(item, bool),
                 "null": lambda item: item is None,
             }.get(expected_type)

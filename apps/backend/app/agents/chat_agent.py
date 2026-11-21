@@ -1,7 +1,12 @@
 import logging
 from typing import Any
 
-from app.services.ai.ai_coordinator import generate_master_response
+from app.models.prompt import ToolApproval
+from app.services.ai.ai_coordinator import (
+    build_approved_action_message,
+    generate_master_response,
+)
+from app.tools.tool_registry import validate_tool_calls
 
 logger = logging.getLogger(__name__)
 
@@ -13,6 +18,7 @@ async def process_chat(
     content: str,
     message_history: list[Any] | None = None,
     control_mode: bool = False,
+    tool_approval: ToolApproval | None = None,
 ) -> dict[str, Any]:
 
     try:
@@ -21,6 +27,48 @@ async def process_chat(
                 "provider": "groq",
                 "success": False,
                 "error": "Message content cannot be empty.",
+            }
+
+        if tool_approval is not None:
+            if not control_mode:
+                return {
+                    "provider": "groq",
+                    "success": False,
+                    "error": "Tool approval is only available in control mode.",
+                }
+
+            requested_calls = [
+                call.model_dump() for call in tool_approval.tool_calls
+            ]
+            approved_calls, validation_error = validate_tool_calls(requested_calls)
+            if approved_calls is None:
+                logger.warning(
+                    "Rejected invalid approved tool call: %s",
+                    validation_error,
+                )
+                return {
+                    "provider": "groq",
+                    "success": False,
+                    "error": "The approved action is invalid.",
+                }
+
+            if tool_approval.decision == "denied":
+                return {
+                    "provider": "groq",
+                    "success": True,
+                    "content": "Understood. I won't do that.",
+                    "tool_calls": [],
+                    "pending_tool_calls": [],
+                    "approval_required": False,
+                }
+
+            return {
+                "provider": "groq",
+                "success": True,
+                "content": build_approved_action_message(approved_calls),
+                "tool_calls": approved_calls,
+                "pending_tool_calls": [],
+                "approval_required": False,
             }
 
         history = []
@@ -67,6 +115,10 @@ async def process_chat(
 
         if not isinstance(response, dict):
             raise TypeError("AI coordinator returned an invalid response.")
+
+        if response.get("success"):
+            response.setdefault("pending_tool_calls", [])
+            response.setdefault("approval_required", False)
 
         return response
 

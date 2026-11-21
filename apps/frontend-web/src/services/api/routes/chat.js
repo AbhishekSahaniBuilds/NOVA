@@ -4,6 +4,7 @@ export async function fetchChat({
   content,
   message_history = [],
   control_mode = false,
+  tool_approval = null,
 }) {
   return apiRequest("/chat", {
     method: "POST",
@@ -14,6 +15,7 @@ export async function fetchChat({
       content,
       message_history,
       control_mode,
+      tool_approval,
     }),
   });
 }
