@@ -1,5 +1,4 @@
 import logging
-from contextlib import asynccontextmanager
 
 import uvicorn
 from fastapi import FastAPI
@@ -7,75 +6,20 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from app.api import router
 from app.core.config import settings
-from app.services.ai.google_service import (
-    connect_to_gemini,
-    disconnect_to_gemini,
+from app.core.lifespan import lifespan
+
+# ============================================================
+# LOGGING CONFIGURATION
+# ============================================================
+
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s | %(levelname)s | %(name)s | %(message)s",
+    datefmt="%Y-%m-%d %H:%M:%S",
 )
-from app.services.ai.groq_service import (
-    connect_to_groq,
-    disconnect_to_groq,
-)
+logging.getLogger("httpx").setLevel(logging.WARNING)
 
 logger = logging.getLogger(__name__)
-
-
-# ============================================================
-# APPLICATION LIFESPAN
-# ============================================================
-
-
-@asynccontextmanager
-async def lifespan(app: FastAPI):
-    app.state.groq_client = None
-    app.state.gemini_client = None
-
-    # Start Groq.
-    try:
-        groq_result = await connect_to_groq()
-
-        if groq_result.get("success"):
-            app.state.groq_client = groq_result.get("client")
-            logger.info("Groq connected successfully.")
-        else:
-            logger.error(
-                "Groq connection failed: %s",
-                groq_result.get("error"),
-            )
-
-    except Exception:
-        logger.exception("Unexpected error while connecting to Groq.")
-
-    # Gemini is optional and is not on the MainAI request path.
-    if settings.gemini_api_key:
-        try:
-            gemini_result = await connect_to_gemini()
-
-            if gemini_result.get("success"):
-                app.state.gemini_client = gemini_result.get("client")
-                logger.info("Gemini connected successfully.")
-            else:
-                logger.error("Gemini connection failed: %s", gemini_result.get("error"))
-
-        except Exception:
-            logger.exception("Unexpected error while connecting to Gemini.")
-
-    yield
-
-    # Shut down Gemini.
-    if app.state.gemini_client is not None:
-        try:
-            await disconnect_to_gemini(app.state.gemini_client)
-            logger.info("Gemini disconnected.")
-        except Exception:
-            logger.exception("Error while disconnecting Gemini.")
-
-    # Shut down Groq.
-    if app.state.groq_client is not None:
-        try:
-            await disconnect_to_groq(app.state.groq_client)
-            logger.info("Groq disconnected.")
-        except Exception:
-            logger.exception("Error while disconnecting Groq.")
 
 
 # ============================================================

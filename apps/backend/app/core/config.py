@@ -11,6 +11,8 @@ class Settings(BaseSettings):
     host: str = "127.0.0.1"
     port: int = 8000
 
+    mongodb_username: str | None = None
+    mongodb_password: str | None = None
     mongodb_uri: str | None = None
     mongodb_database: str | None = None
 
